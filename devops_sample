@@ -1,0 +1,67 @@
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout Source Code') {
+            steps {
+                echo 'Starting CI pipeline...'
+                checkout scm
+            }
+        }
+
+        stage('Check Java') {
+            steps {
+                sh '''
+                    echo "===== Java Version ====="
+                    java -version
+
+                    JAVA_VERSION=$(java -version 2>&1 | head -n 1)
+
+                    if echo "$JAVA_VERSION" | grep -q '"21'; then
+                        echo "Java 21 detected successfully."
+                    else
+                        echo "ERROR: Java 21 is required."
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
+        stage('Check Maven') {
+            steps {
+                sh '''
+                    if command -v mvn >/dev/null 2>&1; then
+                        echo "===== Maven Version ====="
+                        mvn -version
+                    else
+                        echo "Maven is not installed on this agent."
+                    fi
+                '''
+            }
+        }
+
+        stage('Check Git') {
+            steps {
+                sh '''
+                    echo "===== Git Version ====="
+                    git --version
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Environment verification completed.'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the console output.'
+        }
+
+        always {
+            echo 'Pipeline execution finished.'
+        }
+    }
+}
